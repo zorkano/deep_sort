@@ -6,7 +6,6 @@ import numpy as np
 import cv2
 import tensorflow as tf
 
-
 def _run_in_batches(f, data_dict, out, batch_size):
     data_len = len(out)
     num_batches = int(data_len / batch_size)
@@ -19,7 +18,6 @@ def _run_in_batches(f, data_dict, out, batch_size):
     if e < len(out):
         batch_data_dict = {k: v[e:] for k, v in data_dict.items()}
         out[e:] = f(batch_data_dict)
-
 
 def extract_image_patch(image, bbox, patch_shape):
     """Extract image patch from bounding box.
@@ -67,19 +65,18 @@ def extract_image_patch(image, bbox, patch_shape):
     image = cv2.resize(image, tuple(patch_shape[::-1]))
     return image
 
-
 class ImageEncoder(object):
 
     def __init__(self, checkpoint_filename, input_name="images",
                  output_name="features"):
-        self.session = tf.Session()
-        with tf.gfile.GFile(checkpoint_filename, "rb") as file_handle:
-            graph_def = tf.GraphDef()
+        self.session = tf.compat.v1.Session()
+        with tf.io.gfile.GFile(checkpoint_filename, "rb") as file_handle:
+            graph_def = tf.compat.v1.GraphDef()
             graph_def.ParseFromString(file_handle.read())
         tf.import_graph_def(graph_def, name="net")
-        self.input_var = tf.get_default_graph().get_tensor_by_name(
+        self.input_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
             "net/%s:0" % input_name)
-        self.output_var = tf.get_default_graph().get_tensor_by_name(
+        self.output_var = tf.compat.v1.get_default_graph().get_tensor_by_name(
             "net/%s:0" % output_name)
 
         assert len(self.output_var.get_shape()) == 2
@@ -93,7 +90,6 @@ class ImageEncoder(object):
             lambda x: self.session.run(self.output_var, feed_dict=x),
             {self.input_var: data_x}, out, batch_size)
         return out
-
 
 def create_box_encoder(model_filename, input_name="images",
                        output_name="features", batch_size=32):
@@ -113,7 +109,6 @@ def create_box_encoder(model_filename, input_name="images",
         return image_encoder(image_patches, batch_size)
 
     return encoder
-
 
 def generate_detections(encoder, mot_dir, output_dir, detection_dir=None):
     """Generate detections with features.
@@ -180,7 +175,6 @@ def generate_detections(encoder, mot_dir, output_dir, detection_dir=None):
         np.save(
             output_filename, np.asarray(detections_out), allow_pickle=False)
 
-
 def parse_args():
     """Parse command line arguments.
     """
@@ -201,13 +195,11 @@ def parse_args():
         " exist.", default="detections")
     return parser.parse_args()
 
-
 def main():
     args = parse_args()
     encoder = create_box_encoder(args.model, batch_size=32)
     generate_detections(encoder, args.mot_dir, args.output_dir,
                         args.detection_dir)
-
 
 if __name__ == "__main__":
     main()
