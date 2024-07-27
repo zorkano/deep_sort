@@ -1,7 +1,7 @@
 # vim: expandtab:ts=4:sw=4
 from __future__ import absolute_import
 import numpy as np
-from scipy.optimize import linear_sum_assignment as linear_assignment
+from sklearn.utils.linear_assignment_ import linear_assignment
 from . import kalman_filter
 
 
@@ -59,9 +59,8 @@ def min_cost_matching(
 
     matches, unmatched_tracks, unmatched_detections = [], [], []
     for col, detection_idx in enumerate(detection_indices):
-        if not any(col == idx[1] for idx in indices):
+        if col not in indices[:, 1]:
             unmatched_detections.append(detection_idx)
-
     for row, track_idx in enumerate(track_indices):
         if row not in indices[:, 0]:
             unmatched_tracks.append(track_idx)
